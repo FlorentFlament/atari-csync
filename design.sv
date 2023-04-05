@@ -1,47 +1,47 @@
-module csync_generator(clk, hsync, vsync, csync);
-   input  clk;
-   input  hsync;
-   input  vsync;
-   output csync;
+module csync_generator
+  #(parameter CNT_WIDTH = 8)
+   (
+    input  clk,
+    input  hsync,
+    input  vsync,
+    output csync
+    );
 
-   reg 	  hreg0;
-   reg 	  hreg1;
-   reg 	  vreg0;
-   reg [1:0] counter;
-   reg       creg;
-   wire      hpulse;
+   reg [1:0]         hreg;
+   reg [1:0]         vreg;
+   reg 		     creg;
+   reg [CNT_WIDTH:0] counter;
+   wire 	     hpulse;
 
-   assign hpulse = hreg1 & ~hreg0;
-   assign csync = creg;
+   assign hpulse = hreg[1] & ~hreg[0];
+   assign csync  = creg;
 
    initial begin
-      hreg0 = 1;
-      hreg1 = 1;
-      vreg0 = 1;
-      counter = 0;
-      creg = 1;
+      hreg    = 2'b11;
+      vreg    = 2'b11;
+      creg    = 1;
+      counter = 2**(CNT_WIDTH-1);
    end
 
    always @(posedge clk)
      begin
-        hreg0 <= hsync;
-        hreg1 <= hreg0;
-        vreg0 <= vsync;
+        hreg[0] <= hsync;
+        vreg[0] <= vsync;
+	hreg[1] <= hreg[0];
+	vreg[1] <= vreg[0];
 
-        if (hpulse) begin
-           counter <= 3;
-           creg <= 1;
-        end
+        if (hpulse)
+	  counter <= 0;
+	else if (counter[CNT_WIDTH-1] == 0)
+	  counter <= counter + 1;
+	else
+	  counter <= counter;
 
-        else begin
-           if (counter > 0)
-             counter <= counter - 1;
-           case(counter)
-             0: creg <= vreg0;
-             1: creg <= 0;
-             2: creg <= 0;
-             3: creg <= 1;
-           endcase // case (counter)
-        end // else: !if(hpulse)
+	if (counter[CNT_WIDTH-1] == 1)
+	  creg <= vreg[1];
+	else if (counter[CNT_WIDTH-2] == 0)
+	  creg <= 1;
+	else
+	  creg <= 0;
      end // always @ (posedge clk)
 endmodule // csync_generator
