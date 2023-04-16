@@ -9,7 +9,16 @@ prog: design.bin
 test: test.bin
 	iceprog $<
 
+gen-sync-prog: gen-sync.bin
+	iceprog $<
+
+gen-sync-sim: gen-sync-testbench.vcd
+	gtkwave $<
+
 testbench.exe: testbench.sv design.sv
+	iverilog -o $@ $^
+
+%-testbench.exe: %-testbench.sv %.sv
 	iverilog -o $@ $^
 
 %.vcd: %.exe
