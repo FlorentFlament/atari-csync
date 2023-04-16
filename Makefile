@@ -6,19 +6,22 @@ sim: testbench.vcd
 prog: design.bin
 	iceprog $<
 
+test: test.bin
+	iceprog $<
+
 testbench.exe: testbench.sv design.sv
 	iverilog -o $@ $^
 
-testbench.vcd: testbench.exe
+%.vcd: %.exe
 	./$<
 
-design.blif: design.sv
+%.blif: %.sv
 	yosys -p "synth_ice40 -blif $@" $<
 
-design.asc: design.blif pins.pcf
-	arachne-pnr -d 1k -p pins.pcf design.blif -o $@
+%.asc: %.blif %.pcf
+	arachne-pnr -d 1k -p $(word 2,$^) $(word 1,$^) -o $@
 
-design.bin: design.asc
+%.bin: %.asc
 	icepack $< $@
 
 clean:
