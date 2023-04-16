@@ -3,6 +3,9 @@
 	gen-sync-sim \
 	csync-pulse-prog \
 	csync-pulse-sim \
+	csync-and-prog \
+	csync-xor-prog \
+	test-prog \
 #
 
 clean:
