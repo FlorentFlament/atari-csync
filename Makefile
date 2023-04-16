@@ -1,28 +1,29 @@
-.phony: sim prog clean
+.phony: clean \
+	gen-sync-prog \
+	gen-sync-sim \
+	csync-pulse-prog \
+	csync-pulse-sim \
+#
 
-sim: testbench.vcd
-	gtkwave $<
+clean:
+	rm -f *.exe *.bin *.vcd *.blif *.asc
 
-prog: design.bin
-	iceprog $<
+#################
+# Generic rules #
+#################
 
-test: test.bin
-	iceprog $<
-
-gen-sync-prog: gen-sync.bin
-	iceprog $<
-
-gen-sync-sim: gen-sync-testbench.vcd
-	gtkwave $<
-
-testbench.exe: testbench.sv design.sv
-	iverilog -o $@ $^
+# Simulation
 
 %-testbench.exe: %-testbench.sv %.sv
 	iverilog -o $@ $^
 
 %.vcd: %.exe
 	./$<
+
+%-sim: %-testbench.vcd
+	gtkwave $<
+
+# FPGA programming
 
 %.blif: %.sv
 	yosys -p "synth_ice40 -blif $@" $<
@@ -33,5 +34,6 @@ testbench.exe: testbench.sv design.sv
 %.bin: %.asc
 	icepack $< $@
 
-clean:
-	rm -f *.exe *.bin *.vcd *.blif *.asc
+%-prog: %.bin
+	iceprog $<
+

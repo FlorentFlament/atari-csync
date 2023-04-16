@@ -1,26 +1,26 @@
 // Testbench
 `timescale 1us/1us
 
-module test;
+module test_csync_pulse;
    reg  clk;
    reg  hsync;
    reg  vsync;
    wire csync;
 
    // Instantiate design under test
-   csync_generator #(
-		     .CNT_WIDTH (5)
-		     ) DUT (
-			      .clk(clk),
-			      .hsync(hsync),
-			      .vsync(vsync),
-			      .csync(csync)
-			      );
+   csync_pulse #(
+		 .CNT_WIDTH (5)
+		 ) DUT (
+			.clk(clk),
+			.hsync(hsync),
+			.vsync(vsync),
+			.csync(csync)
+			);
 
    initial begin
       // Dump waves
-      $dumpfile("testbench.vcd");
-      $dumpvars(0, test);
+      $dumpfile("csync-pulse-testbench.vcd");
+      $dumpvars(0, test_csync_pulse);
 
       // Initial values
       vsync = 1;
@@ -80,4 +80,4 @@ module test;
       end
    endtask // endofline
    
-endmodule // test
+endmodule

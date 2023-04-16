@@ -1,4 +1,6 @@
-module csync_generator
+// Generates clean csync pulse when seeing hsync pulse
+// vsync is used when no pulse is being sent
+module csync_pulse
   #(parameter CNT_WIDTH = 8)
    (
     input  clk,
@@ -44,4 +46,4 @@ module csync_generator
 	else
 	  creg <= 0;
      end // always @ (posedge clk)
-endmodule // csync_generator
+endmodule
