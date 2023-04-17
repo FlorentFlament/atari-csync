@@ -41,13 +41,13 @@ module gen_sync
 	     line_cnt <= 0; // Resynchronize on vpulse
 	if (hpulse)
 	     dot_cnt <= 709 ; // Resynchronize on hpulse (avoids drift)
-	else if (dot_cnt == 765)
+	else if (dot_cnt >= 765)
 	  begin
-	     if (line_cnt == 312)
+	     dot_cnt <= 0;
+	     if (line_cnt >= 312)
 	       line_cnt <= 0;
 	     else
 	       line_cnt <= line_cnt + 1;
-	     dot_cnt <= 0;
 	  end
 	else
 	  dot_cnt <= dot_cnt + 1;
