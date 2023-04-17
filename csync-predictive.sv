@@ -1,7 +1,30 @@
+module top
+  (
+   input  clk, //12 MHz clock reference
+   input  hsync,
+   input  vsync,
+   output csync
+   );
+
+   wire   clk_pll; // PLL generated clock
+
+   pll mypll (.clock_in(clk), .clock_out(clk_pll));
+
+   // Using 102MHz clk_pll clock
+   csync_predictive
+     #( .PLL_FREQ( 102000000 ) )
+   mysync (
+	   .clk(clk_pll),
+	   .hsync(hsync),
+	   .vsync(vsync),
+	   .csync(csync)
+	   );
+endmodule // top
+
 // Fully generate "expected" csync signal
 // Then resynchronizes on hsync and vsync to avoid drift
 module csync_predictive
-  #(parameter PLL_FREQ = 12000000) // 102MHz PLL clock_out
+  #(parameter PLL_FREQ = 12e6) // 12MHz default clock frequency
    (
     input  clk,
     input  hsync,
@@ -16,8 +39,7 @@ module csync_predictive
    localparam PULSE_WIDTH = 5e-6; // 5 us hsync pulse width
 
    // TODO: round instead of truncate LINE_TICKS to reduce drift
-   localparam LINE_TICKS  = PLL_FREQ / HSYNC_FREQ; // per line clocks ticks (i.e dots)
-
+   localparam LINE_TICKS     = $rtoi(PLL_FREQ / HSYNC_FREQ); // per line clocks ticks (i.e dots)
    localparam PULSE_TICKS    = $rtoi(PLL_FREQ * PULSE_WIDTH); // width of hsync pulse
    localparam HSYNC_HIGH_DOT = LINE_TICKS - 2*PULSE_TICKS - 1;
    localparam HSYNC_LOW_DOT  = LINE_TICKS - PULSE_TICKS - 1;
@@ -27,11 +49,11 @@ module csync_predictive
    reg [1:0] hreg;
    reg [1:0] vreg;
    reg 	     creg;
-   reg [8:0] line_cnt;
-   reg [9:0] dot_cnt;
+   reg [LINE_COUNTER_WIDTH:0] line_cnt;
+   reg [DOT_COUNTER_WIDTH:0]  dot_cnt;
 
-   wire      hpulse;
-   wire      vpulse;
+   wire 		      hpulse;
+   wire 		      vpulse;
 
    assign hpulse = hreg[1] & ~hreg[0]; // Falling edge
    assign vpulse = vreg[0] & ~vreg[1]; // Rising edge
@@ -46,7 +68,7 @@ module csync_predictive
 
    always @(posedge clk)
      begin
-	// Sampling vsync
+	// Sampling vsync and hsync signals
         vreg[0] <= vsync;
 	vreg[1] <= vreg[0];
         hreg[0] <= hsync;
@@ -56,8 +78,13 @@ module csync_predictive
 	if (vpulse)
 	  line_cnt <= 0; // Resynchronize on vpulse
 	if (hpulse)
-	  // Resynchronize on hpulse (avoids drift)
-	  dot_cnt <= HSYNC_LOW_DOT + 2 ; // We're 2 ticks into hsync_low
+	  // Resynchronize on hpulse to avoid drift. We're a few ticks
+	  // into hsync_low when we see the pulse: FPGA samples the
+	  // input signal a few times (maybe 2) before asserting the
+	  // high-low transition, then we sample the signal 2 times
+	  // with hreg[0] and hreg[1], then we take hpulse into
+	  // account.
+	  dot_cnt <= HSYNC_LOW_DOT + 5 ;
 	else if (dot_cnt == LINE_TICKS-1) // End of line reached
 	  begin
 	     dot_cnt <= 0;
@@ -80,6 +107,5 @@ module csync_predictive
 	    creg <= 1;
 	  else
 	    creg <= 0;
-
      end // always @ (posedge clk)
 endmodule // csync_generator

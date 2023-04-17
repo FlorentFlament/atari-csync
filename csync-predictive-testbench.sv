@@ -8,7 +8,7 @@ module test_gen_sync;
    integer i;
 
    // Instantiate design under test
-   gen_sync DUT (
+   csync_predictive DUT (
 		 .clk(clk),
 		 .vsync(vsync),
 		 .csync(csync)
@@ -16,7 +16,7 @@ module test_gen_sync;
 
    initial begin
       // Dump waves
-      $dumpfile("gen-sync-testbench.vcd");
+      $dumpfile("csync-predictive-testbench.vcd");
       $dumpvars(0, test_gen_sync);
 
       // Initial values

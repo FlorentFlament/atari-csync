@@ -1,7 +1,7 @@
 .phony: clean \
-	gen-sync-prog \
-	gen-sync-sim \
-	gen-sync-ta \
+	csync-predictive-prog \
+	csync-predictive-sim \
+	csync-predictive-ta \
 	csync-pulse-prog \
 	csync-pulse-sim \
 	csync-and-prog \
@@ -11,6 +11,13 @@
 
 clean:
 	rm -f *.exe *.bin *.vcd *.blif *.asc
+
+#################
+# Special cases #
+################
+
+csync-predictive.blif: csync-predictive.sv pll.sv
+	yosys -p "synth_ice40 -top top -blif $@" $^
 
 #################
 # Generic rules #
