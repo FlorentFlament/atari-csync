@@ -5,5 +5,5 @@ module csync_and
     input  vsync,
     output csync
    );
-   assign csync = hsync ^ vsync;
+   assign csync = hsync ^ ~vsync;
 endmodule
