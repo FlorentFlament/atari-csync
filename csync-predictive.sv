@@ -11,6 +11,7 @@ module top
    pll mypll (.clock_in(clk), .clock_out(clk_pll));
 
    // Using 102MHz clk_pll clock
+   // icetime timing estimate is 114 MHz, so keeping some margin.
    csync_predictive
      #( .PLL_FREQ( 102000000 ) )
    mysync (
