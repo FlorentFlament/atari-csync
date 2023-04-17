@@ -1,13 +1,29 @@
-// Fully generate csync signal, just syncing on vsync
-// Hsync signal frequency is 15.67KHz
-// With a clock at 12MHz, it makes 775.8 ticks per line
-module gen_sync
+// Fully generate "expected" csync signal
+// Then resynchronizes on hsync and vsync to avoid drift
+module csync_predictive
+  #(parameter PLL_FREQ = 12000000) // 102MHz PLL clock_out
    (
     input  clk,
     input  hsync,
     input  vsync,
     output csync
     );
+
+   localparam FRAME_LINES = 313; // 313 lines per frame Although my
+   localparam HSYNC_FREQ  = 15666; // i.e 15.666 KHz horizontal sync
+   // scope shows a 15.67 KHz Hsync signal frequency; using 15.666 KHz
+   // for HSYNC_FREQ results in rounder numbers.
+   localparam PULSE_WIDTH = 5e-6; // 5 us hsync pulse width
+
+   // TODO: round instead of truncate LINE_TICKS to reduce drift
+   localparam LINE_TICKS  = PLL_FREQ / HSYNC_FREQ; // per line clocks ticks (i.e dots)
+
+   localparam PULSE_TICKS    = $rtoi(PLL_FREQ * PULSE_WIDTH); // width of hsync pulse
+   localparam HSYNC_HIGH_DOT = LINE_TICKS - 2*PULSE_TICKS - 1;
+   localparam HSYNC_LOW_DOT  = LINE_TICKS - PULSE_TICKS - 1;
+   localparam DOT_COUNTER_WIDTH  = $clog2(LINE_TICKS);
+   localparam LINE_COUNTER_WIDTH = $clog2(FRAME_LINES);
+
    reg [1:0] hreg;
    reg [1:0] vreg;
    reg 	     creg;
@@ -38,13 +54,14 @@ module gen_sync
 
 	// Update counters
 	if (vpulse)
-	     line_cnt <= 0; // Resynchronize on vpulse
+	  line_cnt <= 0; // Resynchronize on vpulse
 	if (hpulse)
-	     dot_cnt <= 709 ; // Resynchronize on hpulse (avoids drift)
-	else if (dot_cnt >= 765)
+	  // Resynchronize on hpulse (avoids drift)
+	  dot_cnt <= HSYNC_LOW_DOT + 2 ; // We're 2 ticks into hsync_low
+	else if (dot_cnt == LINE_TICKS-1) // End of line reached
 	  begin
 	     dot_cnt <= 0;
-	     if (line_cnt >= 312)
+	     if (line_cnt == FRAME_LINES-1) // End of frame
 	       line_cnt <= 0;
 	     else
 	       line_cnt <= line_cnt + 1;
@@ -53,15 +70,15 @@ module gen_sync
 	  dot_cnt <= dot_cnt + 1;
 
 	// csync based on counters
-	if (dot_cnt > 645)
-	  if (dot_cnt <= 705)
+	if (dot_cnt < HSYNC_HIGH_DOT)
+	  if (line_cnt < FRAME_LINES - 3) // on 2 last lines vsync is low
 	    creg <= 1;
-	  else
+	  else // Max line_cnt value is FRAME_LINES-1
 	    creg <= 0;
 	else
-	  if (line_cnt < 310)
+	  if (dot_cnt < HSYNC_LOW_DOT)
 	    creg <= 1;
-	  else // Max line value is 312
+	  else
 	    creg <= 0;
 
      end // always @ (posedge clk)
