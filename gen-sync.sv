@@ -1,18 +1,24 @@
 // Fully generate csync signal, just syncing on vsync
+// Hsync signal frequency is 15.67KHz
+// With a clock at 12MHz, it makes 775.8 ticks per line
 module gen_sync
    (
     input  clk,
+    input  hsync,
     input  vsync,
     output csync
     );
+   reg [1:0] hreg;
    reg [1:0] vreg;
    reg 	     creg;
    reg [8:0] line_cnt;
    reg [9:0] dot_cnt;
 
+   wire      hpulse;
    wire      vpulse;
 
-   assign vpulse = vreg[0] & ~vreg[1];
+   assign hpulse = hreg[1] & ~hreg[0]; // Falling edge
+   assign vpulse = vreg[0] & ~vreg[1]; // Rising edge
    assign csync  = creg;
 
    initial begin
@@ -27,16 +33,20 @@ module gen_sync
 	// Sampling vsync
         vreg[0] <= vsync;
 	vreg[1] <= vreg[0];
+        hreg[0] <= hsync;
+	hreg[1] <= hreg[0];
 
 	// Update counters
 	if (vpulse)
-	  begin
-	     line_cnt <= 0;
-	     dot_cnt <= 100; // That's when the pulse arrives
-	  end
+	     line_cnt <= 0; // Resynchronize on vpulse
+	if (hpulse)
+	     dot_cnt <= 709 ; // Resynchronize on hpulse (avoids drift)
 	else if (dot_cnt == 765)
 	  begin
-	     line_cnt <= line_cnt + 1;
+	     if (line_cnt == 312)
+	       line_cnt <= 0;
+	     else
+	       line_cnt <= line_cnt + 1;
 	     dot_cnt <= 0;
 	  end
 	else
@@ -51,7 +61,7 @@ module gen_sync
 	else
 	  if (line_cnt < 310)
 	    creg <= 1;
-	  else
+	  else // Max line value is 312
 	    creg <= 0;
 
      end // always @ (posedge clk)
