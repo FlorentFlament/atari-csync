@@ -14,7 +14,7 @@ clean:
 
 #################
 # Special cases #
-################
+#################
 
 csync-predictive.blif: csync-predictive.sv pll.sv
 	yosys -p "synth_ice40 -top top -blif $@" $^
