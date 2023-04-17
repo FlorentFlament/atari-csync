@@ -1,6 +1,7 @@
 .phony: clean \
 	gen-sync-prog \
 	gen-sync-sim \
+	gen-sync-ta \
 	csync-pulse-prog \
 	csync-pulse-sim \
 	csync-and-prog \
@@ -40,3 +41,7 @@ clean:
 %-prog: %.bin
 	iceprog $<
 
+# Timing analysis
+
+%-ta: %.asc
+	icetime -d hx1k $<
