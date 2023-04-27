@@ -1,3 +1,38 @@
+Title: An RGB composite sync signal generator for the Atari ST
+
+This repository contains some verilog code to be synthesized and
+programmed into a Lattice ICE40HX1K FPGA.  The main target is
+`csync-predictive-prog`; it programs the FPGA, to generate a clean RGB
+composite sync signal from an Atari ST H-Sync and V-Sync signal. This
+allows displaying the Atari ST video outout on any RGB compliant
+display device.
+
+Usage:
+
+```
+$ make csync-predictive-prod
+```
+
+Some other targets are also available (see Makefile), they have mostly
+been used to perform some experiments.
+
+More context about this project can be found on my [Generating a clean
+Atari ST RGB C-Sync signal][1] article.
+
+
+## Prerequisites
+
+The following Ubuntu / Debian packages are used:
+
+* yosys
+* arachne-pnr
+* fpga-icestorm
+* iverilog (optional)
+* gtkwave (optional)
+
+
+## Lattice iCEstick pinout
+
 J2 connector ports:
 
 ```
@@ -29,3 +64,5 @@ pin 1
       irda
 ```
 
+
+[1]:http://www.florentflament.com/blog/generating-a-clean-atari-st-rgb-c-sync-signal.html
