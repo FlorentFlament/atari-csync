@@ -1,4 +1,4 @@
-Title: An RGB composite sync signal generator for the Atari ST
+# An RGB composite sync signal generator for the Atari ST
 
 This repository contains some verilog code to be synthesized and
 programmed into a Lattice ICE40HX1K FPGA.  The main target is
